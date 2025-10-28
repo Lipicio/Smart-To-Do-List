@@ -16,11 +16,11 @@ export class TaskService {
     return task;
   }
 
-  async create(title: string, source = 'manual'): Promise<Task> {
+  async create(title: string): Promise<Task> {
     if (!title || title.trim().length < 1) {
       throw new Error('Título é obrigatório');
     }
-    return this.repo.create({ title: title.trim(), source });
+    return this.repo.create({ title: title.trim()});
   }
 
   async update(id: number, data: Partial<Task>): Promise<Task> {
