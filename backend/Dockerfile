@@ -1,5 +1,5 @@
 # Base image
-FROM node:20-alpine
+FROM node:18-bullseye
 WORKDIR /app
 
 # Copia package.json e instala dependências
