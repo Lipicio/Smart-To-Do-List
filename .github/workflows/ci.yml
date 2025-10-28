@@ -44,8 +44,8 @@ jobs:
         run: npm ci
 
       - name: Make envfile
-        uses: SpicyPizza/create-envfile@v1
         working-directory: ./backend
+        uses: SpicyPizza/create-envfile@v1        
         with:
           envkey_DEBUG: false
           envkey_DATABASE_URL: "file:./dev.db"          
