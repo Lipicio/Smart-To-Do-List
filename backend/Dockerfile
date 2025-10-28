@@ -13,4 +13,4 @@ COPY . .
 EXPOSE 3001
 
 # Comando para rodar em modo desenvolvimento
-CMD ["npm", "run", "start:dev"]
+CMD ["npm", "run", "start:dev:docker"]
