@@ -1,4 +1,4 @@
-name: CI — Backend unit tests
+name: Teste unitário de Backend
 
 on:
   pull_request:
