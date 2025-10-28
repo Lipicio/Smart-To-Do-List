@@ -1,34 +1,35 @@
-import { Injectable } from '@nestjs/common';
-import { PrismaService } from '../prisma/prisma.service';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { Task } from '@prisma/client';
+import { TaskRepository } from './task.repository';
 
 @Injectable()
 export class TaskService {
-    constructor(private readonly prisma: PrismaService){}
+  constructor(private readonly repo: TaskRepository) {}
 
-    async findAll(): Promise<Task[]> {
-        return this.prisma.task.findMany();
+  async findAll(): Promise<Task[]> {
+    return this.repo.findAll();
+  }
+
+  async findOne(id: number): Promise<Task> {
+    const task = await this.repo.findOne(id);
+    if (!task) throw new NotFoundException(`Tarefa ${id} não encontrada`);
+    return task;
+  }
+
+  async create(title: string, source = 'manual'): Promise<Task> {
+    if (!title || title.trim().length < 1) {
+      throw new Error('Título é obrigatório');
     }
+    return this.repo.create({ title: title.trim(), source });
+  }
 
-    async findOne(id: number): Promise<Task | null> {
-        return this.prisma.task.findUnique({where: { id } });
-    }
+  async update(id: number, data: Partial<Task>): Promise<Task> {
+    await this.findOne(id); 
+    return this.repo.update(id, data);
+  }
 
-    async create(title: string): Promise<Task> {
-        return this.prisma.task.create({
-            data: { title },
-        });
-    }
-
-    async update(id: number, data: Partial<Task>): Promise<Task> {
-        return this.prisma.task.update({
-            where: { id },
-            data,
-        })
-    }
-
-    async remove(id: number): Promise<Task> {
-        return this.prisma.task.delete({ where: {id} });
-    }
-
+  async remove(id: number): Promise<Task> {
+    await this.findOne(id);
+    return this.repo.remove(id);
+  }
 }
