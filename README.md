@@ -7,21 +7,21 @@ O projeto é dockerizado para facilitar o setup e execução.
 
 ## 🏗 Estrutura do Projeto
 
-smart-todo/
-├─ backend/ # Backend NestJS + SQLite + Dockerfile
-│ ├─ src/
-│ ├─ package.json
-│ ├─ Dockerfile
-│ └─ tsconfig.json
-├─ frontend/ # Frontend Next.js + Tailwind + React Compiler
-│ ├─ app/
-│ ├─ package.json
-│ ├─ Dockerfile
-│ ├─ tailwind.config.js
-│ └─ tsconfig.json
-├─ docker-compose.yml # Orquestração dos containers
-├─ .gitignore
-└─ README.md
+smart-todo/\
+├─ backend/ # Backend NestJS + SQLite + Dockerfile\
+│ ├─ src/\
+│ ├─ package.json\
+│ ├─ Dockerfile\
+│ └─ tsconfig.json\
+├─ frontend/ # Frontend Next.js + Tailwind + React Compiler\
+│ ├─ app/\
+│ ├─ package.json\
+│ ├─ Dockerfile\
+│ ├─ tailwind.config.js\
+│ └─ tsconfig.json\
+├─ docker-compose.yml # Orquestração dos containers\
+├─ .gitignore\
+└─ README.md\
 
 
 ---
