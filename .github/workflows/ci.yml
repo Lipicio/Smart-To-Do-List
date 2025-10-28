@@ -14,6 +14,8 @@ jobs:
   backend-tests:
     name: Backend Tests
     runs-on: ubuntu-latest
+    env:
+      DATABASE_URL: "file:./backend/dev.db"
     strategy:
       matrix:
         node-version: [20.x]
@@ -42,14 +44,6 @@ jobs:
       - name: Install backend dependencies
         working-directory: ./backend
         run: npm ci
-
-      - name: Make envfile
-        working-directory: ./backend
-        uses: SpicyPizza/create-envfile@v1        
-        with:
-          envkey_DEBUG: false
-          envkey_DATABASE_URL: "file:./dev.db"          
-          file_name: .env
 
       - name: Generate Prisma Client
         working-directory: ./backend
