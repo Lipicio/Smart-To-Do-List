@@ -97,7 +97,7 @@ docker compose exec frontend bash
 
 ## 📝 Observações
 
-* Por enquanto a API Key para IA deve ser configurada em .env.local, no futuro teremos uma feature para adicionar no frontend na configuração do usuário.
+* Por enquanto a API Key para IA deve ser configurada em .env.local, no futuro teremos um input para o usuário inserir a API KEY.
 * A aplicação utiliza Tailwind CSS, React Compiler e App Router no frontend para uma interface reativa e moderna.
 * Backend NestJS está em modo desenvolvimento, permitindo hot reload.
 
