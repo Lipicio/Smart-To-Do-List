@@ -43,6 +43,9 @@ jobs:
         working-directory: ./backend
         run: npm ci
 
+      - name: Generate Prisma Client
+        run: npx prisma generate
+
       - name: Run backend unit tests
         working-directory: ./backend
         run: npm run test -- --runInBand
