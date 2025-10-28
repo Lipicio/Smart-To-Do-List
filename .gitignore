@@ -1,0 +1,15 @@
+# Node
+node_modules/
+npm-debug.log
+yarn-error.log
+
+# Docker
+*.log
+*.pid
+*.env
+dist/
+dev.db
+
+# Next.js
+.next/
+out/
