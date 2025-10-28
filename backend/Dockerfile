@@ -1,10 +1,10 @@
 # Base image
-FROM node:20-alpine
+FROM node:18-bullseye
 WORKDIR /app
 
 # Copia package.json e instala dependências
 COPY package*.json ./
-RUN npm install
+RUN npm ci
 
 # Copia todo o código fonte
 COPY . .
