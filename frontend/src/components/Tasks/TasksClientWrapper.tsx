@@ -58,6 +58,30 @@ export default function TasksClientWrapper() {
     }
   };
 
+  const editTitle = async (id: number, title: string) => {
+    const previous = tasks;
+    setTasks(prev => prev.map(t => (t.id === id ? { ...t, title } : t)));
+    try {
+      const res = await fetch(`/api/tasks/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ title }),
+      });
+      if (!res.ok) {
+        setTasks(previous);
+        const contentType = res.headers.get('content-type') || '';
+        const payload = contentType.includes('application/json') ? await res.json().catch(()=>null) : null;
+        throw payload ?? new Error(await res.text().catch(()=> 'Erro'));
+      }
+      const updated = await res.json().catch(()=>null);
+      if (updated) setTasks(prev => prev.map(t => t.id === id ? updated : t));
+    } catch (err) {
+      setTasks(previous);
+      // rethrow para o TaskCard exibir mensagem local
+      throw err;
+    }
+  };
+
   if (loading) return <p>Carregando tarefas...</p>;
 
   return (
@@ -73,7 +97,7 @@ export default function TasksClientWrapper() {
         </div>
       </div>
 
-      <TaskList tasks={tasks} onToggle={toggle} onDelete={remove} />
+      <TaskList tasks={tasks} onToggle={toggle} onDelete={remove} onEditTitle={editTitle} />
 
       <TaskCreationModal
         isOpen={isModalOpen}

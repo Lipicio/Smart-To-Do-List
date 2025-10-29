@@ -3,10 +3,11 @@ import React from 'react';
 import { Task } from '@/types';
 import TaskCard from './TaskCard';
 
-export default function TaskList({ tasks, onToggle, onDelete }: {
+export default function TaskList({ tasks, onToggle, onDelete, onEditTitle }: {
   tasks: Task[];
   onToggle?: (id: number, next: boolean) => void;
   onDelete?: (id: number) => void;
+  onEditTitle?: (id: number, title: string) => Promise<void>;
 }) {
   if (!tasks?.length) {
     return <div className="text-gray-500">Nenhuma tarefa.</div>;
@@ -15,7 +16,7 @@ export default function TaskList({ tasks, onToggle, onDelete }: {
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
       {tasks.map(t => (
-        <TaskCard key={t.id} task={t} onToggle={onToggle} onDelete={onDelete} />
+        <TaskCard key={t.id} task={t} onToggle={onToggle} onDelete={onDelete} onEditTitle={onEditTitle} />
       ))}
     </div>
   );

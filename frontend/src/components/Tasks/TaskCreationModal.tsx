@@ -4,16 +4,22 @@ import { useEffect, useRef, useState } from 'react';
 type Props = {
   isOpen: boolean;
   onClose: () => void;
-  onCreateManual: (title: string) => Promise<void>; // função passada pelo wrapper
+  onCreateManual: (title: string) => Promise<void>;
+};
+
+type ServerError = {
+  statusCode?: number;
+  message?: string;
+  errors?: Array<{ field?: string; message?: string }>;
 };
 
 export default function TaskCreationModal({ isOpen, onClose, onCreateManual }: Props) {
   const [activeTab, setActiveTab] = useState<'manual' | 'ia'>('manual');
   const [title, setTitle] = useState('');
   const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<ServerError | null>(null);
   const inputRef = useRef<HTMLInputElement | null>(null);
 
-  // Auto-focar input ao abrir quando na aba manual
   useEffect(() => {
     if (isOpen && activeTab === 'manual') {
       setTimeout(() => inputRef.current?.focus(), 50);
@@ -22,26 +28,54 @@ export default function TaskCreationModal({ isOpen, onClose, onCreateManual }: P
       setTitle('');
       setSaving(false);
       setActiveTab('manual');
+      setError(null);
     }
   }, [isOpen, activeTab]);
 
+  const validateTitle = (t: string) => {
+    if (!t.trim()) return { ok: false, message: 'Título obrigatório' };
+    if (t.trim().length > 150) return { ok: false, message: 'O título não pode ter mais que 150 caracteres' };
+    return { ok: true };
+  };
+
   const handleCreate = async () => {
     const trimmed = title.trim();
-    if (!trimmed) {
+    const clientValidation = validateTitle(trimmed);
+
+    if (!clientValidation.ok) {
+      setError({ message: clientValidation.message });
       inputRef.current?.focus();
       return;
     }
+
     try {
       setSaving(true);
+      setError(null);
+
       await onCreateManual(trimmed);
+
       setTitle('');
       onClose();
-    } catch (err) {      
-      console.error(err);
-      alert('Erro ao criar tarefa.');
+    } catch (err: any) {
+      const parsed: ServerError =
+        err && typeof err === 'object'
+          ? {
+              statusCode: err.statusCode ?? err.status,
+              message: err.message ?? String(err),
+              errors: Array.isArray(err.errors) ? err.errors : undefined,
+            }
+          : { message: String(err) };
+      setError(parsed);
+      inputRef.current?.focus();
     } finally {
       setSaving(false);
     }
+  };
+
+  // limpa erro ao digitar (melhora UX)
+  const handleChange = (v: string) => {
+    if (error) setError(null);
+    setTitle(v);
   };
 
   if (!isOpen) return null;
@@ -56,15 +90,21 @@ export default function TaskCreationModal({ isOpen, onClose, onCreateManual }: P
       {/* backdrop */}
       <div
         className="absolute inset-0 bg-black/40"
-        onClick={() => { if (!saving) onClose(); }}
+        onClick={() => {
+          if (!saving) onClose();
+        }}
       />
 
       {/* modal */}
-      <div className="relative bg-white w-full max-w-4xl mx-4 min-h-[30vh] rounded-lg shadow-lg overflow-hidden">
+      <div className="relative bg-white w-full max-w-4xl mx-4 rounded-lg shadow-lg overflow-hidden">
         <div className="px-4 py-3 border-b flex items-center justify-between">
-          <h2 id="task-modal-title" className="text-lg font-semibold text-black">Nova Tarefa</h2>
+          <h2 id="task-modal-title" className="text-lg font-semibold text-black">
+            Nova Tarefa
+          </h2>
           <button
-            onClick={() => { if (!saving) onClose(); }}
+            onClick={() => {
+              if (!saving) onClose();
+            }}
             aria-label="Fechar modal"
             className="text-gray-500 hover:text-gray-800"
           >
@@ -98,16 +138,46 @@ export default function TaskCreationModal({ isOpen, onClose, onCreateManual }: P
                 ref={inputRef}
                 type="text"
                 value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                onKeyDown={(e) => { if (e.key === 'Enter') handleCreate(); }}
+                onChange={(e) => handleChange(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') handleCreate();
+                }}
                 placeholder="Descreva a tarefa..."
                 className="text-gray-700 w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring focus:ring-blue-200"
                 disabled={saving}
               />
 
+              {/* bloco de erro: logo abaixo do input, entre input e botões */}
+              {error && (
+                <div
+                  role="alert"
+                  className="mt-3 text-sm text-red-700 bg-red-50 border border-red-100 p-3 rounded"
+                >
+                  <div className="font-medium">
+                    Erro{error.statusCode ? ` (${error.statusCode})` : ''}
+                  </div>
+
+                  {error.message && <div className="mt-1">{error.message}</div>}
+
+                  {error.errors && error.errors.length > 0 && (
+                    <ul className="mt-2 list-disc list-inside text-red-600">
+                      {error.errors.map((e, idx) => (
+                        <li key={idx}>
+                          {e.field ? `${e.field}: ` : ''}
+                          {e.message}
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+              )}
+
               <div className="mt-4 flex justify-end gap-2">
                 <button
-                  onClick={() => { setTitle(''); onClose(); }}
+                  onClick={() => {
+                    setTitle('');
+                    onClose();
+                  }}
                   className="px-3 py-2 rounded bg-gray-100 hover:bg-red-700 bg-red-600"
                   disabled={saving}
                 >
