@@ -1,20 +1,22 @@
 import React from 'react';
 import TasksClientWrapper from '@/components/TasksClientWrapper';
-import { Task } from '@/types';
 
-async function fetchTasks(): Promise<Task[]> {
-  const res = await fetch('http://smart-backend:3001/tasks', { cache: 'no-store' });
-  if (!res.ok) throw new Error('Failed to fetch tasks');
-  return res.json();
-}
+export const metadata = {
+  title: 'Tasks — Smart To-Do',
+  description: 'Lista de tarefas',
+};
 
-export default async function TasksPage() {
-  const tasks = await fetchTasks();
-
+export default function TasksPage() {
   return (
-    <main className="p-6">
-      <h1 className="text-2xl font-bold mb-4">Minhas Tasks</h1>
-      <TasksClientWrapper tasks={tasks} />
+    <main className="max-w-4xl mx-auto p-6">
+      <header className="mb-6">
+        <h1 className="text-3xl font-extrabold">Minhas Tasks</h1>
+        <p className="text-sm text-gray-500 mt-1">Gerencie suas tarefas e marque as concluídas</p>
+      </header>
+
+      <section>
+        <TasksClientWrapper />
+      </section>
     </main>
   );
 }
