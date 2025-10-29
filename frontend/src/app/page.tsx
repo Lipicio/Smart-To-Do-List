@@ -21,7 +21,7 @@ export default function Home() {
   return (
     <main className="min-h-screen flex items-center justify-center p-8">
       <div className="max-w-xl w-full text-center">
-        <h1 className="text-2xl font-bold mb-4">Smart To-Do — Frontend Básico</h1>
+        <h1 className="text-2xl font-bold mb-4">Smart To-Do List — Frontend Básico</h1>
         <ClientOnly>
           <pre className="rounded text-left">Backend Status: {msg}</pre>
         </ClientOnly>        
