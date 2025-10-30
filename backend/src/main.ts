@@ -5,11 +5,14 @@ import { AppModule } from './app.module';
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
+  app.enableCors();
+
   app.useGlobalPipes(
     new ValidationPipe({
-      whitelist: true,
-      forbidNonWhitelisted: true,
-      transform: true,
+      whitelist: true, // remove propriedades não declaradas nos DTOs
+      forbidNonWhitelisted: true, // rejeita requests com props extras
+      transform: true, // transforma payloads para instâncias de classes (DTOs)
+      transformOptions: { enableImplicitConversion: true },
       exceptionFactory: (errors) => {
         const formattedErrors = errors.map((err) => ({
           field: err.property,
@@ -23,12 +26,12 @@ async function bootstrap() {
           message: 'Erro de validação',
           errors: formattedErrors,
         });
-
       },
     }),
   );
 
-  await app.listen(3001);
+  const port = Number(process.env.PORT || 3001);
+  await app.listen(port);
 }
 
 bootstrap();
