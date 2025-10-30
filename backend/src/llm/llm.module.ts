@@ -6,7 +6,7 @@ import { OpenRouterLlmRepository } from './repository/openrouter-llm.repository'
 import { TaskModule } from '../task/task.module';
 
 @Module({
-  imports: [TaskModule],
+  imports: [forwardRef(() => TaskModule)],
   controllers: [LlmController],
   providers: [
     LlmService,
