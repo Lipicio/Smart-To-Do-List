@@ -9,10 +9,18 @@ export default function TasksClientWrapper() {
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
+  // Ajuste aqui caso seu backend não use o prefixo /api
+  const TASKS_BASE = '/api';
+  const TASKS_URL = `${TASKS_BASE}/tasks`;
+  const LLM_GENERATE_URL = `${TASKS_BASE}/llm/generate`;
+
   // Buscar tasks ao montar
   useEffect(() => {
-    fetch('/api/tasks')
-      .then((res) => res.json())
+    fetch(TASKS_URL)
+      .then((res) => {
+        if (!res.ok) throw new Error(`Erro ${res.status}`);
+        return res.json();
+      })
       .then((data) => setTasks(data))
       .catch((err) => console.error('Erro ao buscar tarefas:', err))
       .finally(() => setLoading(false));
@@ -20,7 +28,7 @@ export default function TasksClientWrapper() {
 
   // função exposta para criar manualmente (usada pelo modal)
   const createTask = async (title: string) => {
-    const res = await fetch('/api/tasks', {
+    const res = await fetch(TASKS_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ title }),
@@ -36,13 +44,17 @@ export default function TasksClientWrapper() {
   };
 
   const toggle = async (id: number, next: boolean) => {
+    // optimistic UI
     setTasks((prev) => prev.map((t) => (t.id === id ? { ...t, isCompleted: next } : t)));
     try {
-      await fetch(`/api/tasks/${id}`, {
+      const res = await fetch(`${TASKS_URL}/${id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ isCompleted: next }),
       });
+      if (!res.ok) {
+        throw new Error(`Erro ${res.status}`);
+      }
     } catch {
       // rollback simples em caso de erro
       setTasks((prev) => prev.map((t) => (t.id === id ? { ...t, isCompleted: !next } : t)));
@@ -50,19 +62,25 @@ export default function TasksClientWrapper() {
   };
 
   const remove = async (id: number) => {
+    // optimistic remove
+    const previous = tasks;
     setTasks((prev) => prev.filter((t) => t.id !== id));
     try {
-      await fetch(`/api/tasks/${id}`, { method: 'DELETE' });
+      const res = await fetch(`${TASKS_URL}/${id}`, { method: 'DELETE' });
+      if (!res.ok) {
+        throw new Error(`Erro ${res.status}`);
+      }
     } catch {
-      // em erro, refetch poderia ser feito. Simplicidade: nada por enquanto
+      // rollback
+      setTasks(previous);
     }
   };
 
   const editTitle = async (id: number, title: string) => {
     const previous = tasks;
-    setTasks(prev => prev.map(t => (t.id === id ? { ...t, title } : t)));
+    setTasks((prev) => prev.map((t) => (t.id === id ? { ...t, title } : t)));
     try {
-      const res = await fetch(`/api/tasks/${id}`, {
+      const res = await fetch(`${TASKS_URL}/${id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ title }),
@@ -70,16 +88,45 @@ export default function TasksClientWrapper() {
       if (!res.ok) {
         setTasks(previous);
         const contentType = res.headers.get('content-type') || '';
-        const payload = contentType.includes('application/json') ? await res.json().catch(()=>null) : null;
-        throw payload ?? new Error(await res.text().catch(()=> 'Erro'));
+        const payload = contentType.includes('application/json') ? await res.json().catch(() => null) : null;
+        throw payload ?? new Error(await res.text().catch(() => 'Erro'));
       }
-      const updated = await res.json().catch(()=>null);
-      if (updated) setTasks(prev => prev.map(t => t.id === id ? updated : t));
+      const updated = await res.json().catch(() => null);
+      if (updated) setTasks((prev) => prev.map((t) => (t.id === id ? updated : t)));
     } catch (err) {
       setTasks(previous);
       // rethrow para o TaskCard exibir mensagem local
       throw err;
     }
+  };
+
+  // ------------------------
+  // Handler para tasks criadas via IA (callback do modal)
+  // ------------------------
+  const handleTasksCreated = (newTasks: any[]) => {
+    if (!Array.isArray(newTasks) || newTasks.length === 0) return;
+
+    // normalizar elementos (assegurar que tenham id)
+    const normalized = newTasks
+      .filter(Boolean)
+      .map((t) => t as Task)
+      .filter((t) => typeof t.id !== 'undefined' && t.id !== null);
+
+    if (normalized.length === 0) {
+      // se servidor retornou tasks sem id, você pode optar por refetch ou apenas concatenar
+      // aqui escolhemos simplesmente concatenar os objetos tal qual retornados (sem id)
+      setTasks((prev) => [...newTasks, ...prev]);
+      return;
+    }
+
+    // evitar duplicatas por id: construir map de existentes
+    const existingIds = new Set(tasks.map((t) => t.id));
+    const filtered = normalized.filter((t) => !existingIds.has(t.id));
+
+    if (filtered.length === 0) return;
+
+    // adiciona as novas no topo
+    setTasks((prev) => [...filtered, ...prev]);
   };
 
   if (loading) return <p>Carregando tarefas...</p>;
@@ -105,6 +152,7 @@ export default function TasksClientWrapper() {
         onCreateManual={async (title) => {
           await createTask(title);
         }}
+        onTasksCreated={handleTasksCreated}
       />
     </div>
   );

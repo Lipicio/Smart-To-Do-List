@@ -5,6 +5,11 @@ type Props = {
   isOpen: boolean;
   onClose: () => void;
   onCreateManual: (title: string) => Promise<void>;
+  /**
+   * Callback opcional que será chamado com a lista de tasks retornadas
+   * pelo backend após a geração via IA. Use-o para atualizar a lista em tela.
+   */
+  onTasksCreated?: (tasks: any[]) => void;
 };
 
 type ServerError = {
@@ -13,21 +18,41 @@ type ServerError = {
   errors?: Array<{ field?: string; message?: string }>;
 };
 
-export default function TaskCreationModal({ isOpen, onClose, onCreateManual }: Props) {
-  const [activeTab, setActiveTab] = useState<'manual' | 'ia'>('manual');
+export default function TaskCreationModal({
+  isOpen,
+  onClose,
+  onCreateManual,
+  onTasksCreated,
+}: Props) {
+  const [activeTab, setActiveTab] = useState<'manual' | 'ia'>('ia');
+
+  // manual
   const [title, setTitle] = useState('');
+  const inputRef = useRef<HTMLInputElement | null>(null);
+
+  // ia
+  const [aiScript, setAiScript] = useState('');
+  const [aiKey, setAiKey] = useState('');
+  const aiScriptRef = useRef<HTMLTextAreaElement | null>(null);
+
+  // shared state
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<ServerError | null>(null);
-  const inputRef = useRef<HTMLInputElement | null>(null);
 
   useEffect(() => {
     if (isOpen && activeTab === 'manual') {
       setTimeout(() => inputRef.current?.focus(), 50);
     }
+    if (isOpen && activeTab === 'ia') {
+      setTimeout(() => aiScriptRef.current?.focus(), 50);
+    }
     if (!isOpen) {
+      // reset state when modal closes
       setTitle('');
+      setAiScript('');
+      setAiKey('');
       setSaving(false);
-      setActiveTab('manual');
+      setActiveTab('ia');
       setError(null);
     }
   }, [isOpen, activeTab]);
@@ -73,9 +98,102 @@ export default function TaskCreationModal({ isOpen, onClose, onCreateManual }: P
   };
 
   // limpa erro ao digitar (melhora UX)
-  const handleChange = (v: string) => {
+  const handleManualChange = (v: string) => {
     if (error) setError(null);
     setTitle(v);
+  };
+
+  // ----------------------
+  // IA flow
+  // ----------------------
+  const validateAiInputs = () => {
+    if (!aiKey.trim()) return { ok: false, message: 'A API Key é obrigatória' };
+    if (!aiScript.trim()) return { ok: false, message: 'Descreva o objetivo/script' };
+    if (aiScript.trim().length > 5000) return { ok: false, message: 'Script muito grande' };
+    return { ok: true };
+  };
+
+  const handleGenerateWithAI = async () => {
+    const v = validateAiInputs();
+    if (!v.ok) {
+      setError({ message: v.message });
+      if (!aiKey.trim()) {
+        // focus na key se for o caso
+        (document.getElementById('ai-key-input') as HTMLInputElement | null)?.focus();
+      } else {
+        aiScriptRef.current?.focus();
+      }
+      return;
+    }
+
+    try {
+      setSaving(true);
+      setError(null);
+
+      // chama backend /llm/generate
+      const resp = await fetch('/llm/generate', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          script: aiScript.trim(),
+          openRouterToken: aiKey.trim(),
+        }),
+      });
+
+      if (!resp.ok) {
+        // tenta parsear erro do servidor
+        let parsedErr: any = null;
+        try {
+          parsedErr = await resp.json();
+        } catch {
+          parsedErr = { message: await resp.text() };
+        }
+        const serverError: ServerError = {
+          statusCode: resp.status,
+          message: parsedErr?.message ?? parsedErr ?? `Erro ${resp.status}`,
+          errors: parsedErr?.errors,
+        };
+        setError(serverError);
+        return;
+      }
+
+      // sucesso: resposta deve ser array de tasks (com ids gerados)
+      const data = await resp.json();
+      if (!Array.isArray(data)) {
+        setError({ message: 'Resposta inesperada do servidor' });
+        return;
+      }
+
+      // chama callback do pai para atualizar a lista sem reload
+      if (onTasksCreated) {
+        try {
+          onTasksCreated(data);
+        } catch (e) {
+          // não parar fluxo se callback falhar, apenas log
+          // eslint-disable-next-line no-console
+          console.warn('onTasksCreated callback failed', e);
+        }
+      }
+
+      // limpa e fecha modal
+      setAiScript('');
+      setAiKey('');
+      onClose();
+    } catch (err: any) {
+      const parsed: ServerError =
+        err && typeof err === 'object'
+          ? {
+              statusCode: err.statusCode ?? err.status,
+              message: err.message ?? String(err),
+              errors: Array.isArray(err.errors) ? err.errors : undefined,
+            }
+          : { message: String(err) };
+      setError(parsed);
+    } finally {
+      setSaving(false);
+    }
   };
 
   if (!isOpen) return null;
@@ -114,18 +232,18 @@ export default function TaskCreationModal({ isOpen, onClose, onCreateManual }: P
 
         {/* tabs */}
         <div className="px-4 py-3 border-b">
-          <nav className="flex gap-2" aria-label="Tabs">
-            <button
-              className={`px-3 py-1 rounded ${activeTab === 'manual' ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-700'}`}
-              onClick={() => setActiveTab('manual')}
-            >
-              Manual
-            </button>
+          <nav className="flex gap-2" aria-label="Tabs">            
             <button
               className={`px-3 py-1 rounded ${activeTab === 'ia' ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-700'}`}
               onClick={() => setActiveTab('ia')}
             >
               Inteligência Artificial
+            </button>
+            <button
+              className={`px-3 py-1 rounded ${activeTab === 'manual' ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-700'}`}
+              onClick={() => setActiveTab('manual')}
+            >
+              Criar Manualmente
             </button>
           </nav>
         </div>
@@ -138,7 +256,7 @@ export default function TaskCreationModal({ isOpen, onClose, onCreateManual }: P
                 ref={inputRef}
                 type="text"
                 value={title}
-                onChange={(e) => handleChange(e.target.value)}
+                onChange={(e) => handleManualChange(e.target.value)}
                 onKeyDown={(e) => {
                   if (e.key === 'Enter') handleCreate();
                 }}
@@ -186,40 +304,90 @@ export default function TaskCreationModal({ isOpen, onClose, onCreateManual }: P
 
                 <button
                   onClick={handleCreate}
-                  className="px-4 py-2 rounded bg-green-600 text-white hover:bg-green-700 disabled:opacity-60"
+                  className="px-4 py-2 rounded bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-60"
                   disabled={saving}
                 >
-                  {saving ? 'Salvando...' : 'Salvar'}
+                  {saving ? 'Salvando...' : 'Criar tarefa'}
                 </button>
               </div>
             </div>
           ) : (
             <div>
-              {/* Placeholder para integração IA futura */}
               <p className="text-sm text-gray-600 mb-3">
-                Aqui você poderá gerar tarefas automaticamente a partir de um objetivo (ex.: "planejar viagem").
-                Integração com IA será implementada em seguida.
-              </p>
+                Adicione sua API Key do OpenRouter e descreva o objetivo desejado — as tarefas serão geradas automaticamente por uma Inteligência Artificial. 
+                <span className="mt-1 text-xs text-gray-500 italic">
+                  Sua API Key será usada apenas nesta requisição e não será armazenada.
+                </span>
+              </p>             
 
-              <textarea
-                rows={4}
-                placeholder="Descreva seu objetivo de alto nível..."
-                className="text-gray-700 w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring focus:ring-blue-200"
-                disabled
+              <label className="text-sm font-medium text-gray-700 block mb-2">API Key</label>
+              <input
+                id="ai-key-input"
+                type="password"
+                value={aiKey}
+                onChange={(e) => {
+                  if (error) setError(null);
+                  setAiKey(e.target.value);
+                }}
+                placeholder="Cole aqui a API Key do OpenRouter (sk-...)"
+                className="text-gray-700 w-full border border-gray-300 rounded px-3 py-2 mb-3 focus:outline-none focus:ring focus:ring-blue-200"
+                disabled={saving}
               />
+
+              <label className="text-sm font-medium text-gray-700 block mb-2">Objetivo / Script</label>
+              <textarea
+                ref={aiScriptRef}
+                rows={5}
+                value={aiScript}
+                onChange={(e) => {
+                  if (error) setError(null);
+                  setAiScript(e.target.value);
+                }}
+                placeholder="Ex.: 'Gere as tarefas necessárias para a entrega de uma sprint de 2 semanas'"
+                className="text-gray-700 w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring focus:ring-blue-200"
+                disabled={saving}
+              />
+
+              {/* bloco de erro para IA */}
+              {error && (
+                <div
+                  role="alert"
+                  className="mt-3 text-sm text-red-700 bg-red-50 border border-red-100 p-3 rounded"
+                >
+                  <div className="font-medium">
+                    Erro{error.statusCode ? ` (${error.statusCode})` : ''}
+                  </div>
+
+                  {error.message && <div className="mt-1">{error.message}</div>}
+
+                  {error.errors && error.errors.length > 0 && (
+                    <ul className="mt-2 list-disc list-inside text-red-600">
+                      {error.errors.map((e, idx) => (
+                        <li key={idx}>
+                          {e.field ? `${e.field}: ` : ''}
+                          {e.message}
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+              )}
 
               <div className="mt-4 flex justify-end gap-2">
                 <button
                   onClick={() => setActiveTab('manual')}
                   className="px-3 py-2 rounded bg-gray-100 hover:bg-red-700 bg-red-600"
+                  disabled={saving}
                 >
                   Voltar
                 </button>
+
                 <button
-                  onClick={() => alert('Funcionalidade IA será implementada em breve')}
-                  className="px-4 py-2 rounded bg-blue-600 text-white"
+                  onClick={handleGenerateWithAI}
+                  className="px-4 py-2 rounded bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-60"
+                  disabled={saving}
                 >
-                  Em breve
+                  {saving ? 'Gerando tarefas...' : 'Gerar com IA'}
                 </button>
               </div>
             </div>
