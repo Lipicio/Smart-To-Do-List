@@ -2,7 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { LlmService } from '../llm.service';
 import type { LlmRepository } from '../repository/llm.repository';
 import type { Task } from '@prisma/client';
-import type { TaskService } from '../../task/task.service';
+import { TaskService } from '../../task/task.service';
 
 describe('LlmService', () => {
   let service: LlmService;
@@ -15,15 +15,14 @@ describe('LlmService', () => {
     } as any;
 
     taskServiceMock = {
-      create: jest.fn(),
-      // outros métodos do TaskService não usados aqui podem ser omitidos
+      create: jest.fn(),     
     } as any;
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         LlmService,
-        { provide: 'LlmRepository', useValue: providerMock },
-        { provide: 'TaskService', useValue: taskServiceMock },
+        { provide: 'LlmRepository', useValue: providerMock }, // provider do LLM
+        { provide: TaskService, useValue: taskServiceMock },  // mock do TaskService
       ],
     }).compile();
 
@@ -35,7 +34,6 @@ describe('LlmService', () => {
   });
 
   it('deve chamar provider.askForTasks e criar tasks via TaskService', async () => {
-    // arrange
     const providerResult = [{ title: 'Tarefa 1' }, { title: 'Tarefa 2' }];
     providerMock.askForTasks.mockResolvedValueOnce(providerResult);
 
@@ -44,6 +42,7 @@ describe('LlmService', () => {
       { id: 1, title: 'Tarefa 1', isCompleted: false, createdAt: now, },
       { id: 2, title: 'Tarefa 2', isCompleted: false, createdAt: now, },
     ];
+
     taskServiceMock.create
       .mockResolvedValueOnce(createdTasks[0])
       .mockResolvedValueOnce(createdTasks[1]);
@@ -55,10 +54,7 @@ describe('LlmService', () => {
     );
 
     // assert
-    expect(providerMock.askForTasks).toHaveBeenCalledWith(
-      'script qualquer',
-      'token-abc',
-    );
+    expect(providerMock.askForTasks).toHaveBeenCalledWith('script qualquer', 'token-abc');
     expect(taskServiceMock.create).toHaveBeenCalledTimes(2);
     expect(taskServiceMock.create).toHaveBeenCalledWith({ title: 'Tarefa 1' });
     expect(taskServiceMock.create).toHaveBeenCalledWith({ title: 'Tarefa 2' });
