@@ -5,6 +5,31 @@ O projeto é dockerizado para facilitar o setup e execução.
 
 ---
 
+## 📝 Observações
+
+* A chave da API do Openrouter deve ser enviada pelo usuário a cada solicitação (a aplicação não irá armazenar o token)
+* A aplicação utiliza Tailwind CSS, React Compiler e App Router no frontend para uma interface reativa e moderna.
+* Backend NestJS está em modo desenvolvimento, permitindo hot reload.
+* No backend utilizei o repository pattern (um dos pilares do DDD) para separar a camada de negócio e de infra, para isso utilizo injeção de dependencias e inversão de controle. Essa abordagem é interessate pois facilita a troca da estrutura de armazenamento de dados (Atualmente utilizando SQLite) e provedor de IA (Atualmente utilizando openrouter) sem compromenter a camada de negocio da aplicação. Também facilita (muito) a criação de testes unitários que, inclusive, foram contemplados no projeto e adicionados a pipeline do github.
+
+---
+
+# Melhorias e Features futuras
+
+1. Débitos Técnicos:
+   * Paginar a listagem das tarefas (infinite scroll entrega uma experiência bacana), da forma que está teremos problemas de recursos quando a lista de tarefas for muito grande;
+   * Melhorar a segurança da aplicação criando um token para a utilização das APIs;
+   * Melhorar a experiência do usuário ao utilizar a IA para criar as tarefas, como temos uma chamada externa perdemos o controle do tempo de retorno da API (existe um gargalo de otimização que podemos realizar), uma opção seria utilizar uma fila de processamento, dessa forma o usuário não precisa ficar aguardando o processamento com a tela "aberta" e podemos reprocessar a requisição em casos de falha ou indisponibilidade do serviço;
+   * Documentar as APIs do back, o swagger é uma boa!
+   
+2. Idéias de Features Futuras:
+   * Criar um kanban para o usuário organizar melhor o que está em do, doing e done;
+   * Criar um campo de data prevista para a conclusão das tarefas, assim o usuário pode distribuir melhor as suas prioridades diárias;
+   * Adicionar um campo de descrição para as tarefas;
+   * Criar uma hieraquia nova de projetos para separar as tarefas em diferentes objetivos;
+
+---
+
 ## 🏗 Estrutura do Projeto
 
 smart-todo/\
@@ -92,28 +117,3 @@ docker compose restart
 docker compose exec backend bash
 docker compose exec frontend bash
 ```
-
----
-
-## 📝 Observações
-
-* A chave da API do Openrouter deve ser enviada pelo usuário a cada solicitação (a aplicação não irá armazenar o token)
-* A aplicação utiliza Tailwind CSS, React Compiler e App Router no frontend para uma interface reativa e moderna.
-* Backend NestJS está em modo desenvolvimento, permitindo hot reload.
-* No backend utilizei o repository pattern (um dos pilares do DDD) para separar a camada de negócio e de infra, para isso utilizo injeção de dependencias e inversão de controle. Essa abordagem é interessate pois facilita a troca da estrutura de armazenamento de dados (Atualmente utilizando SQLite) e provedor de IA (Atualmente utilizando openrouter) sem compromenter a camada de negocio da aplicação. Também facilita (muito) a criação de testes unitários que, inclusive, foram contemplados no projeto e adicionados a pipeline do github.
-
----
-
-# Melhorias e Features futuras
-
-1. Débitos Técnicos:
-   * Paginar a listagem das tarefas (infinite scroll entrega uma experiência bacana), da forma que está teremos problemas de recursos quando a lista de tarefas for muito grande;
-   * Melhorar a segurança da aplicação criando um token para a utilização das APIs;
-   * Melhorar a experiência do usuário ao utilizar a IA para criar as tarefas, como temos uma chamada externa perdemos o controle do tempo de retorno da API (existe um gargalo de otimização que podemos realizar), uma opção seria utilizar uma fila de processamento, dessa forma o usuário não precisa ficar aguardando o processamento com a tela "aberta" e podemos reprocessar a requisição em casos de falha ou indisponibilidade do serviço;
-   * Documentar as APIs do back, o swagger é uma boa!
-   
-2. Idéias de Features Futuras:
-   * Criar um kanban para o usuário organizar melhor o que está em do, doing e done;
-   * Criar um campo de data prevista para a conclusão das tarefas, assim o usuário pode distribuir melhor as suas prioridades diárias;
-   * Adicionar um campo de descrição para as tarefas;
-   * Criar uma hieraquia nova de projetos para separar as tarefas em diferentes objetivos;
