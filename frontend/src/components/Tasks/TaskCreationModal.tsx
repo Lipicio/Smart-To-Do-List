@@ -251,6 +251,14 @@ export default function TaskCreationModal({
 
               <div className="mt-4 flex justify-end gap-2">
                 <button
+                  onClick={handleCreate}
+                  className="px-4 py-2 rounded bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-60"
+                  disabled={saving}
+                >
+                  {saving ? 'Salvando...' : 'Criar tarefa'}
+                </button>
+                
+                <button
                   onClick={() => {
                     setTitle('');
                     onClose();
@@ -261,13 +269,6 @@ export default function TaskCreationModal({
                   Cancelar
                 </button>
 
-                <button
-                  onClick={handleCreate}
-                  className="px-4 py-2 rounded bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-60"
-                  disabled={saving}
-                >
-                  {saving ? 'Salvando...' : 'Criar tarefa'}
-                </button>
               </div>
             </div>
           ) : (
@@ -334,20 +335,24 @@ export default function TaskCreationModal({
 
               <div className="mt-4 flex justify-end gap-2">
                 <button
-                  onClick={() => setActiveTab('manual')}
-                  className="px-3 py-2 rounded bg-gray-100 hover:bg-red-700 bg-red-600"
-                  disabled={saving}
-                >
-                  Voltar
-                </button>
-
-                <button
                   onClick={handleGenerateWithAI}
                   className="px-4 py-2 rounded bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-60"
                   disabled={saving}
                 >
                   {saving ? 'Gerando tarefas...' : 'Gerar com IA'}
                 </button>
+                
+                <button
+                  onClick={() => {
+                    setTitle('');
+                    onClose();
+                  }}
+                  className="px-3 py-2 rounded bg-gray-100 hover:bg-red-700 bg-red-600"
+                  disabled={saving}
+                >
+                  Cancelar
+                </button>
+
               </div>
             </div>
           )}
