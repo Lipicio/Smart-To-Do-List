@@ -97,8 +97,9 @@ docker compose exec frontend bash
 
 ## 📝 Observações
 
-* Por enquanto a API Key para IA deve ser configurada em .env.local, no futuro teremos um input para o usuário inserir a API KEY.
+* A chave da API do Openrouter deve ser enviada pelo usuário a cada solicitação (a aplicação não irá armazenar o token)
 * A aplicação utiliza Tailwind CSS, React Compiler e App Router no frontend para uma interface reativa e moderna.
 * Backend NestJS está em modo desenvolvimento, permitindo hot reload.
+* No backend utilizei o repository pattern (um dos pilares do DDD) para separar a camada de negócio e de infra, para isso utilizo injeção de dependencias e inversão de controle. Essa abordagem é interessate pois facilita a troca da estrutura de armazenamento de dados (Atualmente utilizando SQLite) e provedor de IA (Atualmente utilizando openrouter) sem compromenter a camada de negocio da aplicação. Também facilita (muito) a criação de testes unitários que, inclusive, foram contemplados no projeto e adicionados a pipeline do github.
 
 ---
