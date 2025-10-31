@@ -110,6 +110,7 @@ docker compose exec frontend bash
    * Paginar a listagem das tarefas (infinite scroll entrega uma experiência bacana), da forma que está teremos problemas de recursos quando a lista de tarefas for muito grande;
    * Melhorar a segurança da aplicação criando um token para a utilização das APIs;
    * Melhorar a experiência do usuário ao utilizar a IA para criar as tarefas, como temos uma chamada externa perdemos o controle do tempo de retorno da API (existe um gargalo de otimização que podemos realizar), uma opção seria utilizar uma fila de processamento, dessa forma o usuário não precisa ficar aguardando o processamento com a tela "aberta" e podemos reprocessar a requisição em casos de falha ou indisponibilidade do serviço;
+   * Documentar as APIs do back, o swagger é uma boa!
    
 2. Idéias de Features Futuras:
    * Criar um kanban para o usuário organizar melhor o que está em do, doing e done;
