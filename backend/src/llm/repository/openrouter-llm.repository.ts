@@ -11,7 +11,8 @@ export class OpenRouterLlmRepository implements LlmRepository {
   }
 
   private get model(): string {
-    return this.config.get<string>('OPENROUTER_MODEL') ?? 'gpt-4o-mini';
+    //O modelo pode ser alterado setando o valor da variavel OPENROUTER_MODEL no .env do projeto. O Modelo tngtech/deepseek-r1t2-chimera:free será utilizado como padrão
+    return this.config.get<string>('OPENROUTER_MODEL') ?? 'tngtech/deepseek-r1t2-chimera:free';
   }
 
   private get timeoutMs(): number {
