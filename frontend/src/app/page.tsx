@@ -1,31 +1,22 @@
-'use client';
-import ClientOnly from '@/components/ClientOnly';
-import React, { useEffect, useState } from 'react';
+import React from 'react';
+import TasksClientWrapper from '@/components/Tasks/TasksClientWrapper';
 
-export default function Home() {
-  const [msg, setMsg] = useState<string>('Carregando...');
+export const metadata = {
+  title: 'Tasks — Smart To-Do',
+  description: 'Lista de tarefas',
+};
 
-  useEffect(() => {
-    fetch('/api/health')
-      .then(async res => {
-        if (!res.ok) {
-          const txt = await res.text();
-          throw new Error(txt || 'Erro');
-        }
-        return res.text();
-      })
-      .then(text => setMsg(text))
-      .catch(err => setMsg('Erro: ' + (err.message || err)));
-  }, []);
-
+export default function TasksPage() {
   return (
-    <main className="min-h-screen flex items-center justify-center p-8">
-      <div className="max-w-xl w-full text-center">
-        <h1 className="text-2xl font-bold mb-4">Smart To-Do List — Frontend Básico</h1>
-        <ClientOnly>
-          <pre className="rounded text-left">Backend Status: {msg}</pre>
-        </ClientOnly>        
-      </div>
+    <main className="w-full max-w-7xl mx-auto px-4 p-6">
+      <header className="mb-6">
+        <h1 className="text-3xl font-extrabold">Minhas Tarefas</h1>
+        <p className="text-sm text-gray-500 mt-1">Gerencie suas tarefas e marque as concluídas</p>
+      </header>
+
+      <section>
+        <TasksClientWrapper />
+      </section>
     </main>
   );
 }
