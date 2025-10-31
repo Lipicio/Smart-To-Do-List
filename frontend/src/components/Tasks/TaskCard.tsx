@@ -7,12 +7,13 @@ export default function TaskCard({
   onToggle,
   onDelete,
   onEditTitle,
-  
+  isHideCompleted,
 }: {
   task: Task;
   onToggle?: (id: number, next: boolean) => void;
   onDelete?: (id: number) => void;
   onEditTitle?: (id: number, title: string) => Promise<void>;
+  isHideCompleted: boolean
 }) {
   const [isEditing, setIsEditing] = useState(false);
   const [draftTitle, setDraftTitle] = useState(task.title);
@@ -72,7 +73,9 @@ export default function TaskCard({
   };
 
   return (
-    <article className="bg-white rounded-md shadow-sm p-4 border border-gray-100 flex flex-col justify-between h-full">
+    <article 
+      className={`bg-white rounded-md shadow-sm p-4 border border-gray-100 flex flex-col justify-between h-full ${task.isCompleted && isHideCompleted ? 'hidden' : 'block'}`}
+    >
       <div className="flex items-start justify-between gap-3">
         <div className="flex-1">
           {isEditing ? (

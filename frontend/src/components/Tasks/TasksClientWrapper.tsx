@@ -8,6 +8,7 @@ export default function TasksClientWrapper() {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isHideCompleted, hideCompleted] = useState(true);
 
   // Ajuste aqui caso seu backend não use o prefixo /api
   const TASKS_BASE = '/api';
@@ -56,7 +57,7 @@ export default function TasksClientWrapper() {
         throw new Error(`Erro ${res.status}`);
       }
     } catch {
-      // rollback simples em caso de erro
+      // rollback em caso de erro
       setTasks((prev) => prev.map((t) => (t.id === id ? { ...t, isCompleted: !next } : t)));
     }
   };
@@ -156,17 +157,26 @@ export default function TasksClientWrapper() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <div>
-          <button
-            onClick={() => setIsModalOpen(true)}
-            className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition"
-          >
-            Nova Tarefa
-          </button>
-        </div>
+
+        <button
+          onClick={() => setIsModalOpen(true)}
+          className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition"
+        >
+          Nova Tarefa
+        </button>      
+
+        <button
+          type="button"
+          onClick={() => hideCompleted(!isHideCompleted)}
+          aria-pressed={isHideCompleted}
+          className="text-sm text-gray-500 hover:text-gray-700 transition-colors duration-150"
+        >
+          {isHideCompleted ? 'Mostrar tarefas concluídas' : 'Ocultar tarefas concluídas'}
+        </button>
+
       </div>
 
-      <TaskList tasks={tasks} onToggle={toggle} onDelete={remove} onEditTitle={editTitle} />
+      <TaskList tasks={tasks} onToggle={toggle} onDelete={remove} onEditTitle={editTitle} isHideCompleted={isHideCompleted} />
 
       <TaskCreationModal
         isOpen={isModalOpen}
