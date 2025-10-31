@@ -15,7 +15,7 @@ export default function TaskList({ tasks, onToggle, onDelete, onEditTitle, isHid
   }
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
       {tasks.map(t => (
         <TaskCard key={t.id} task={t} onToggle={onToggle} onDelete={onDelete} onEditTitle={onEditTitle} isHideCompleted={isHideCompleted} />
       ))}

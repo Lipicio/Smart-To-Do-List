@@ -8,7 +8,7 @@ export const metadata = {
 
 export default function TasksPage() {
   return (
-    <main className="max-w-4xl mx-auto p-6">
+    <main className="w-full max-w-7xl mx-auto px-4 p-6">
       <header className="mb-6">
         <h1 className="text-3xl font-extrabold">Minhas Tarefas</h1>
         <p className="text-sm text-gray-500 mt-1">Gerencie suas tarefas e marque as concluídas</p>
