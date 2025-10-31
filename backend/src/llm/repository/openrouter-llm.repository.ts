@@ -7,12 +7,12 @@ export class OpenRouterLlmRepository implements LlmRepository {
   constructor(private readonly config: ConfigService) {}
 
   private get serviceUrl(): string {
-    return this.config.get<string>('OPENROUTER_URL')!;
+    return this.config.get<string>('OPENROUTER_URL') ?? 'https://openrouter.ai/api/v1/chat/completions';
   }
 
   private get model(): string {
-    //O modelo pode ser alterado setando o valor da variavel OPENROUTER_MODEL no .env do projeto. O Modelo tngtech/deepseek-r1t2-chimera:free será utilizado como padrão
-    return this.config.get<string>('OPENROUTER_MODEL') ?? 'tngtech/deepseek-r1t2-chimera:free';
+    //O modelo pode ser alterado setando o valor da variavel OPENROUTER_MODEL no .env do projeto. O Modelo gpt-4o-mini será utilizado como padrão
+    return this.config.get<string>('OPENROUTER_MODEL') ?? 'gpt-4o-mini';
   }
 
   private get timeoutMs(): number {
