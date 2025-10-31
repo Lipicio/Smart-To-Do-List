@@ -68,10 +68,10 @@ Frontend Next.js: http://localhost:3000
 
 ## 🛠 Comandos úteis
 
-- Ver logs de todos os containers:
+- Ver logss:
 
 ```bash
-docker compose logs -f
+docker logs -f <Nome_do_Container>
 ```
 
 - Parar containers:
