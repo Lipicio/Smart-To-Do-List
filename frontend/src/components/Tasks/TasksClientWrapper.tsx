@@ -101,32 +101,54 @@ export default function TasksClientWrapper() {
   };
 
   // ------------------------
-  // Handler para tasks criadas via IA (callback do modal)
+  // Handler para tasks criadas via IA
   // ------------------------
-  const handleTasksCreated = (newTasks: any[]) => {
-    if (!Array.isArray(newTasks) || newTasks.length === 0) return;
+  const generateWithAI = async (script: string, apiKey: string) => {
+    if (!script || !script.trim()) throw new Error('Script inválido');
+    if (!apiKey || !apiKey.trim()) throw new Error('API Key inválida');
 
-    // normalizar elementos (assegurar que tenham id)
-    const normalized = newTasks
-      .filter(Boolean)
-      .map((t) => t as Task)
-      .filter((t) => typeof t.id !== 'undefined' && t.id !== null);
+    const res = await fetch(LLM_GENERATE_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ script: script.trim(), openRouterToken: apiKey.trim() }),
+    });
 
-    if (normalized.length === 0) {
-      // se servidor retornou tasks sem id, você pode optar por refetch ou apenas concatenar
-      // aqui escolhemos simplesmente concatenar os objetos tal qual retornados (sem id)
-      setTasks((prev) => [...newTasks, ...prev]);
-      return;
+    const raw = await res.text();
+    let parsed: any;
+    try {
+      parsed = raw ? JSON.parse(raw) : null;
+    } catch {
+      parsed = raw;
     }
 
-    // evitar duplicatas por id: construir map de existentes
+    if (!res.ok) {
+      const message =
+        parsed && typeof parsed === 'object' ? parsed.message ?? JSON.stringify(parsed) : String(parsed ?? `Erro ${res.status}`);
+      const err: any = new Error(message);
+      err.statusCode = res.status;
+      err.details = parsed?.errors;
+      throw err;
+    }
+
+    if (!Array.isArray(parsed)) {
+      throw new Error('Resposta inesperada do servidor');
+    }
+
+    const incoming = parsed as Task[];
+    const haveIds = incoming.every((t) => typeof t.id !== 'undefined' && t.id !== null);
+
+    if (!haveIds) {
+      setTasks((prev) => [...incoming, ...prev]);
+      return parsed;
+    }
+
     const existingIds = new Set(tasks.map((t) => t.id));
-    const filtered = normalized.filter((t) => !existingIds.has(t.id));
+    const filtered = incoming.filter((t) => !existingIds.has(t.id));
+    if (filtered.length > 0) {
+      setTasks((prev) => [...filtered, ...prev]);
+    }
 
-    if (filtered.length === 0) return;
-
-    // adiciona as novas no topo
-    setTasks((prev) => [...filtered, ...prev]);
+    return parsed;
   };
 
   if (loading) return <p>Carregando tarefas...</p>;
@@ -152,7 +174,7 @@ export default function TasksClientWrapper() {
         onCreateManual={async (title) => {
           await createTask(title);
         }}
-        onTasksCreated={handleTasksCreated}
+        onGenerateAI={generateWithAI}
       />
     </div>
   );

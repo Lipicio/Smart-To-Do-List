@@ -5,11 +5,7 @@ type Props = {
   isOpen: boolean;
   onClose: () => void;
   onCreateManual: (title: string) => Promise<void>;
-  /**
-   * Callback opcional que será chamado com a lista de tasks retornadas
-   * pelo backend após a geração via IA. Use-o para atualizar a lista em tela.
-   */
-  onTasksCreated?: (tasks: any[]) => void;
+  onGenerateAI?: (script: string, apiKey: string) => Promise<any[]>;
 };
 
 type ServerError = {
@@ -22,7 +18,7 @@ export default function TaskCreationModal({
   isOpen,
   onClose,
   onCreateManual,
-  onTasksCreated,
+  onGenerateAI,
 }: Props) {
   const [activeTab, setActiveTab] = useState<'manual' | 'ia'>('ia');
 
@@ -118,7 +114,6 @@ export default function TaskCreationModal({
     if (!v.ok) {
       setError({ message: v.message });
       if (!aiKey.trim()) {
-        // focus na key se for o caso
         (document.getElementById('ai-key-input') as HTMLInputElement | null)?.focus();
       } else {
         aiScriptRef.current?.focus();
@@ -126,58 +121,17 @@ export default function TaskCreationModal({
       return;
     }
 
+    if (!onGenerateAI) {
+      setError({ message: 'A geração via IA não está disponível.' });
+      return;
+    }
+
     try {
       setSaving(true);
       setError(null);
 
-      // chama backend /llm/generate
-      const resp = await fetch('/llm/generate', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          script: aiScript.trim(),
-          openRouterToken: aiKey.trim(),
-        }),
-      });
+      const created = await onGenerateAI(aiScript.trim(), aiKey.trim());
 
-      if (!resp.ok) {
-        // tenta parsear erro do servidor
-        let parsedErr: any = null;
-        try {
-          parsedErr = await resp.json();
-        } catch {
-          parsedErr = { message: await resp.text() };
-        }
-        const serverError: ServerError = {
-          statusCode: resp.status,
-          message: parsedErr?.message ?? parsedErr ?? `Erro ${resp.status}`,
-          errors: parsedErr?.errors,
-        };
-        setError(serverError);
-        return;
-      }
-
-      // sucesso: resposta deve ser array de tasks (com ids gerados)
-      const data = await resp.json();
-      if (!Array.isArray(data)) {
-        setError({ message: 'Resposta inesperada do servidor' });
-        return;
-      }
-
-      // chama callback do pai para atualizar a lista sem reload
-      if (onTasksCreated) {
-        try {
-          onTasksCreated(data);
-        } catch (e) {
-          // não parar fluxo se callback falhar, apenas log
-          // eslint-disable-next-line no-console
-          console.warn('onTasksCreated callback failed', e);
-        }
-      }
-
-      // limpa e fecha modal
       setAiScript('');
       setAiKey('');
       onClose();
@@ -191,6 +145,11 @@ export default function TaskCreationModal({
             }
           : { message: String(err) };
       setError(parsed);
+      if (parsed.message?.toLowerCase().includes('api key') || parsed.statusCode === 401) {
+        (document.getElementById('ai-key-input') as HTMLInputElement | null)?.focus();
+      } else {
+        aiScriptRef.current?.focus();
+      }
     } finally {
       setSaving(false);
     }
@@ -232,7 +191,7 @@ export default function TaskCreationModal({
 
         {/* tabs */}
         <div className="px-4 py-3 border-b">
-          <nav className="flex gap-2" aria-label="Tabs">            
+          <nav className="flex gap-2" aria-label="Tabs">
             <button
               className={`px-3 py-1 rounded ${activeTab === 'ia' ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-700'}`}
               onClick={() => setActiveTab('ia')}
@@ -314,11 +273,11 @@ export default function TaskCreationModal({
           ) : (
             <div>
               <p className="text-sm text-gray-600 mb-3">
-                Adicione sua API Key do OpenRouter e descreva o objetivo desejado — as tarefas serão geradas automaticamente por uma Inteligência Artificial. 
-                <span className="mt-1 text-xs text-gray-500 italic">
+                Adicione sua API Key do OpenRouter e descreva o objetivo desejado — as tarefas serão geradas automaticamente por uma Inteligência Artificial.
+                <span className="mt-1 block text-xs text-gray-500 italic">
                   Sua API Key será usada apenas nesta requisição e não será armazenada.
                 </span>
-              </p>             
+              </p>
 
               <label className="text-sm font-medium text-gray-700 block mb-2">API Key</label>
               <input
